@@ -1,0 +1,195 @@
+#include"Library.h"
+
+int CONNECT()
+{
+	EXEC SQL CONNECT TO MS-20170511WSQV.Library_342 USER abc.abcd; 
+	if(sqlca->sqlcode==0)         
+	{        
+		printf("Connection to SQL Server established\n");  
+	}
+	else
+	{ 
+		printf("ERROR: Connection to SQL Server failed\n");
+		return 1;       
+	}  
+}
+
+int DISCONNECT()
+{
+	EXEC SQL DISCONNECT ALL;
+	if(sqlca->sqlcode==0)         
+	{        
+		printf("DISConnection to SQL Server established\n");  
+	}
+	else
+	{ 
+		printf("ERROR: DISConnection to SQL Server failed\n");
+		return 1;       
+	} 
+	return 1;
+}
+
+/**********登录处理**********/
+EXEC SQL BEGIN DECLARE SECTION; 
+char admin_num[20];
+char admin_pass[20];
+char reader_num[20];
+char reader_pass[20];
+EXEC SQL END DECLARE SECTION;
+long SQLCODE;
+EXEC SQL INCLUDE sqlca;
+int login (void)
+{	
+	int count=0;
+	int select_num;	
+	while(1)
+	{
+		scanf("%d",&select_num);
+		switch(select_num)
+		{
+		case 1:
+			{
+				for(;;)
+				{
+					printf("管理员账号：");
+					scanf("%s",&admin_num);
+					printf("登陆密码：");
+					scanf("%s",&admin_pass);
+					EXEC SQL SELECT Admin_id,Admin_password INTO :admin_num,:admin_pass
+						FROM Admin
+						WHERE Admin_id=:admin_num AND Admin_password=:admin_pass;
+					if(sqlca->sqlcode!=0)
+					{  
+						printf("发生了错误%d\n",SQLCODE);
+						count+=1;
+						printf("帐号密码错误，请重新输入\n");
+						if(count>=3)
+						{
+							system("cls");
+							DISCONNECT();
+							printf(" ------------------------------------------------------------\n");
+							printf("                   -=  感谢使用，再见！ =-                   \n");
+							printf(" ------------------------------------------------------------\n");
+							system("pause");
+							exit(0);
+						}
+						continue;
+					} 
+					printf("登录成功！\n");
+					break;
+				}
+				
+				break;
+			}
+			
+		case 2:
+			{
+				for(;;)
+				{
+					printf("读者账号：");
+					scanf("%s",&reader_num);
+					printf("登陆密码：");
+					scanf("%s",&reader_pass);
+					EXEC SQL SELECT Reader_id,Reader_password INTO :reader_num,:reader_pass
+						FROM Reader
+						WHERE Reader_id=:reader_num AND Reader_password=:reader_pass;
+					if(sqlca->sqlcode!=0)
+					{  
+						printf("发生了错误%d\n",SQLCODE);
+						count+=1;
+						printf("帐号密码错误，请重新输入\n");
+						if(count>=3)
+						{
+							system("cls");
+							DISCONNECT();
+							printf(" ------------------------------------------------------------\n");
+							printf("                   -=  感谢使用，再见！ =-                   \n");
+							printf(" ------------------------------------------------------------\n");
+							system("pause");
+							exit(0);
+						}
+						continue;
+					}
+					strcpy(LReader_num,reader_num);
+					printf("登录成功！\n");
+					break;
+				}
+				break;
+			}	
+		case 0:
+			{
+				system("cls");
+				DISCONNECT();
+				printf(" ------------------------------------------------------------\n");
+				printf("                   -=  感谢使用，再见！ =-                   \n");
+				printf(" ------------------------------------------------------------\n");
+				system("pause");
+				exit(0);
+			}
+		default:printf("输入错误，请重新输入:");continue;
+		}
+		break;
+	}
+	return select_num;	
+}
+
+void admin()
+{
+	int select_num;
+	//admin_menu();
+	while(1)
+	{
+		admin_menu();
+		scanf("%d",&select_num);
+		switch(select_num)
+		{
+		case 1:admin_reader();break;
+		case 2:admin_book();break;
+		case 3:allborrow();break;
+		case 4:overdue();break;
+		case 5:return;
+		case 0:
+			{
+				system("cls");
+				DISCONNECT();
+				printf(" ------------------------------------------------------------\n");
+				printf("                   -=  感谢使用，再见！ =-                   \n");
+				printf(" ------------------------------------------------------------\n");
+				system("pause");
+				exit(0);
+			}
+		default:printf("输入错误，请重新输入:");continue;
+		}
+	}
+	
+}
+
+void reader()
+{
+	int select_num;
+	
+	while(1)
+	{
+		reader_meun();
+		scanf("%d",&select_num);
+		switch(select_num)
+		{
+		case 1:borrowbook();break;
+		case 2:returnbook();break;
+		case 3:updateme();break;
+		case 4:searchpersonborrow();break;
+		case 5:return;
+		case 0:
+			{
+				system("cls");
+				DISCONNECT();
+				printf(" ------------------------------------------------------------\n");
+				printf("                   -=  感谢使用，再见！ =-                   \n");
+				printf(" ------------------------------------------------------------\n");
+				system("pause");
+				exit(0);
+			}
+		default:printf("输入错误，请重新输入:");continue;
+		}		
+	}
+}

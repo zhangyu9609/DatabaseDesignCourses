@@ -1,0 +1,244 @@
+#include"Library.h"
+
+
+EXEC SQL BEGIN DECLARE SECTION; 
+char admin_num[20];
+char admin_pass[20];
+char reader_num[20];
+char reader_pass[20];
+
+char LReader_id[10];
+char LBook_id[10];
+char LBorrow_time[15];
+char LReturn_time[15];
+char LLNull[15]="-1";
+char LReader_name[15];
+char LOver_time[15];
+char LFine[15];
+char LReader_password[10];
+char LReader_sex[10];
+int LReader_age;
+char LReader_Company[15];
+char LReader_work[10];
+
+char LBook_name[20];
+char LBook_writer[15];
+
+char LBook_publisher[15];
+int LBook_price;
+char LBook_introduction[15];
+char LBook_type[15];
+int LBook_num;
+int LBook_allnum;
+
+char LBorrow_time[15];
+char LReturn_time[15];
+
+char LReader_num[20];
+
+EXEC SQL END DECLARE SECTION;
+long SQLCODE;
+EXEC SQL INCLUDE sqlca;
+
+
+void borrowbook()
+{	
+	char YN;
+	allbook();
+	printf("请输入你要借阅的图书的ID：");
+	scanf("%s",&LBook_id);
+	EXEC SQL SELECT Book_id,Book_name,Book_writer,Book_publisher,Book_price,Book_introduction,Book_type,Book_num,Book_allnum INTO :LBook_id,:LBook_name,:LBook_writer:LLNull,:LBook_publisher:LLNull,:LBook_price:LLNull,:LBook_introduction:LLNull,:LBook_type,:LBook_num,:LBook_allnum
+		FROM Book 
+		WHERE Book_id=:LBook_id;
+	if(sqlca->sqlcode!=0) /*sqlcode!=0,表示操作不成功*/
+	{
+		printf("发生了错误%d\n",SQLCODE);
+		return 1;   
+    } 
+	printf("\n%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\n","Book_id","Book_name","Book_writer","Book_publisher","Book_price","Book_intro...","Book_type","Book_num","Book_allnum");
+	printf("%-10s\t%-10s\t%-10s\t%-10s\t%-10d\t%-10s\t%-10s\t%-10d\t%-10d\n",LBook_id,LBook_name,LBook_writer,LBook_publisher,LBook_price,LBook_introduction,LBook_type,LBook_num,LBook_allnum);
+	printf("是否借阅该图书（Y/N）：");
+	do{scanf("%s",&YN);}
+	while(YN != 'N' && YN != 'n' && YN != 'Y' && YN != 'y');
+	if (YN == 'y' || YN == 'Y')
+	{
+		printf("输入借阅时间（2017-XX-XX）：");
+		scanf("%s",&LBorrow_time);
+		EXEC SQL INSERT 
+			INTO Borrow(Reader_id,Book_id,Borrow_time)
+			VALUES(:LReader_num,:LBook_id,:LBorrow_time);
+		if(sqlca->sqlcode!=0) /*sqlcode!=0,表示操作不成功*/
+		{
+			printf("发生了错误%d\n",SQLCODE);
+			return 1;   
+		}
+		printf("借阅成功！打印借阅信息!\n");
+		EXEC SQL SELECT Reader_id,Book_id,Borrow_time INTO :LReader_id,:LBook_id,:LBorrow_time
+			FROM Borrow
+			WHERE Reader_id=:LReader_num AND Book_id=:LBook_id;
+		if(sqlca->sqlcode!=0) /*sqlcode!=0,表示操作不成功*/
+		{
+			printf("发生了错误%d\n",SQLCODE);
+			return 1;   
+		}
+		printf("\n%-10s %-10s %-15s\n","Reader_id","Book_id","Borrow_time");
+		printf("%-10s %-10s %-15s\n",LReader_id,LBook_id,LBorrow_time);
+		printf("操作完成！返回主菜单！\n");
+	}
+}
+
+
+void returnbook()
+{
+	char YN;
+	printf("请输入你要归还的图书的ID：");
+	scanf("%s",&LBook_id);
+	EXEC SQL SELECT Reader_id,Book_id,Borrow_time INTO :LReader_id,:LBook_id,:LBorrow_time
+		FROM Borrow
+		WHERE Reader_id=:LReader_num AND Book_id=:LBook_id;
+	if(sqlca->sqlcode!=0) /*sqlcode!=0,表示操作不成功*/
+	{
+		printf("发生了错误%d\n",SQLCODE);
+		return 1;   
+	}
+	printf("\n%-10s %-10s %-15s\n","Reader_id","Book_id","Borrow_time");
+	printf("%-10s %-10s %-15s\n",LReader_id,LBook_id,LBorrow_time);
+	printf("是否归还该图书（Y/N）：");
+	do{scanf("%s",&YN);}
+	while(YN != 'N' && YN != 'n' && YN != 'Y' && YN != 'y');
+	if (YN == 'y' || YN == 'Y')
+	{
+		printf("输入归还时间（2017-XX-XX）：");
+		scanf("%s",&LReturn_time);
+		EXEC SQL DELETE 
+			FROM Borrow
+			WHERE Reader_id=:LReader_num AND Book_id=:LBook_id;
+		if(sqlca->sqlcode!=0) /*sqlcode!=0,表示操作不成功*/
+		{
+			printf("发生了错误%d\n",SQLCODE);
+			return 1;   
+		}
+		EXEC SQL UPDATE History
+			SET Return_time=:LReturn_time
+			WHERE Reader_id=:LReader_num AND Book_id=:LBook_id AND Borrow_time=:LBorrow_time;
+		if(sqlca->sqlcode!=0) /*sqlcode!=0,表示操作不成功*/
+		{
+			printf("发生了错误%d\n",SQLCODE);
+			return 1;   
+		}
+		printf("归还成功！打印信息!\n");
+		EXEC SQL SELECT Reader_id,Book_id,Borrow_time,Return_time INTO :LReader_id,:LBook_id,:LBorrow_time,:LReturn_time:LLNull
+			FROM History
+			WHERE Reader_id=:LReader_num AND Book_id=:LBook_id AND Borrow_time=:LBorrow_time;
+		if(sqlca->sqlcode!=0) /*sqlcode!=0,表示操作不成功*/
+		{
+			printf("发生了错误%d\n",SQLCODE);
+			return 1;   
+		}
+		printf("\n%-10s %-10s %-15s %-15s\n","Reader_id","Book_id","Borrow_time","Return_time");
+		printf("%-10s %-10s %-15s %-15s\n",LReader_id,LBook_id,LBorrow_time,LReturn_time);
+		printf("操作完成！返回主菜单！\n");
+	}
+}
+
+
+void searchpersonborrow()
+{
+	int  count=0;
+	EXEC SQL DECLARE SX CURSOR FOR
+		SELECT Reader_id,Book_id,Borrow_time
+		FROM Borrow
+		WHERE Reader_id=:LReader_num;
+	EXEC SQL OPEN SX;
+	for ( ; ; )
+	{
+		EXEC SQL FETCH SX INTO :LReader_id,:LBook_id,:LBorrow_time;
+		if (sqlca->sqlcode!=0)
+		{
+			break;
+		}
+		if(count++ == 0)
+		{
+			printf("借阅情况<未还>：");
+			printf("\n%-10s %-10s %-15s\n","Reader_id","Book_id","Borrow_time");
+		}
+		printf("%-10s %-10s %-15s\n",LReader_id,LBook_id,LBorrow_time);
+	}
+	EXEC SQL CLOSE SX;
+	count=0;
+	EXEC SQL DECLARE DX CURSOR FOR
+		SELECT Reader_id,Book_id,Borrow_time,Return_time
+		FROM History
+		WHERE Reader_id=:LReader_num;
+	EXEC SQL OPEN DX;
+	for ( ; ; )
+	{
+		EXEC SQL FETCH DX INTO :LReader_id,:LBook_id,:LBorrow_time,:LReturn_time :LNull;
+		if (sqlca->sqlcode!=0)
+		{
+			printf("打印完成！返回主菜单！\n");
+			break;
+		}
+		if(count++ == 0)
+		{
+			printf("借阅历史<已还>：");
+			printf("\n%-10s %-10s %-15s %-15s\n","Reader_id","Book_id","Borrow_time","Return_time");
+		}
+		printf("%-10s %-10s %-15s %-15s\n",LReader_id,LBook_id,LBorrow_time,LReturn_time);
+	}
+	EXEC SQL CLOSE DX;
+}
+
+void updateme()
+{
+	char YN;
+	printf("你的个人信息：\n");
+	EXEC SQL SELECT Reader_id,Reader_password,Reader_name,Reader_sex,Reader_age,Reader_Company,Reader_work INTO :LReader_id,:LReader_password,:LReader_name,:LReader_sex:LNull,:LReader_age:LNull,:LReader_Company:LNull,:LReader_work:LNull
+		FROM Reader 
+		WHERE Reader_id=:LReader_num;
+	if(sqlca->sqlcode!=0) /*sqlcode!=0,表示操作不成功*/
+	{
+		printf("发生了错误%d\n",SQLCODE);
+		return 1;   
+    } 
+	printf("\n%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\n","Reader_id","Reader_password","LReader_name","Reader_sex","Reader_age","Reader_Company","Reader_work");
+	printf("%-10s\t%-10s\t%-10s\t%-10s\t%-10d\t%-10s\t%-10s\n",LReader_id,LReader_password,LReader_name,LReader_sex,LReader_age,LReader_Company,LReader_work);
+	printf("是否修改（Y/N）：");
+	do{scanf("%s",&YN);}
+	while(YN != 'N' && YN != 'n' && YN != 'Y' && YN != 'y');
+	if (YN == 'y' || YN == 'Y')
+	{
+		printf("输入新的密码：");
+		scanf("%s",&LReader_password);
+		printf("输入新的名字：");
+		scanf("%s",&LReader_name);
+		printf("输入新的性别：");
+		scanf("%s",&LReader_sex);
+		printf("输入新的年龄：");
+		scanf("%d",&LReader_age);
+		printf("输入新的所在单位：");
+		scanf("%s",&LReader_Company);
+		printf("输入新的职业：");
+		scanf("%s",&LReader_work);
+		EXEC SQL UPDATE Reader
+			SET Reader_password=:LReader_password,Reader_name=:LReader_name,Reader_sex=:LReader_sex,Reader_age=:LReader_age,Reader_Company=:LReader_Company,Reader_work=:LReader_work
+			WHERE Reader_id=:LReader_num;
+		if(sqlca->sqlcode!=0) /*sqlcode!=0,表示操作不成功*/
+		{
+			printf("发生了错误%d\n",SQLCODE);
+			return 1;   
+		} 
+		else
+		{
+			printf("修改成功！查看修改结果！\n");
+			EXEC SQL SELECT Reader_id,Reader_password,Reader_name,Reader_sex,Reader_age,Reader_Company,Reader_work INTO :LReader_id,:LReader_password,:LReader_name,:LReader_sex:LNull,:LReader_age:LNull,:LReader_Company:LNull,:LReader_work:LNull
+				FROM Reader 
+				WHERE Reader_id=:LReader_id;
+			printf("\n%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\n","Reader_id","Reader_password","LReader_name","Reader_sex","Reader_age","Reader_Company","Reader_work");
+			printf("%-10s\t%-10s\t%-10s\t%-10s\t%-10d\t%-10s\t%-10s\n",LReader_id,LReader_password,LReader_name,LReader_sex,LReader_age,LReader_Company,LReader_work);	
+		}
+		printf("操作完成！返回主菜单！\n");
+		return 1;
+	}
+	printf("操作完成！返回主菜单！\n");	
+}
